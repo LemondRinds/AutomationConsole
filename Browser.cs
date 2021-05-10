@@ -52,9 +52,8 @@ namespace Automation
                 await page.WaitForNavigationAsync();
                 var cks = await page.GetCookiesAsync();
                 AppConfig.cks = cks.ToList();//.Where(c => c.Domain == new Uri(page.Url).Host).ToList();
-                AppConfig.sessId = AppConfig.cks.Where(c => c.Name == AppConfig.sessIdName).FirstOrDefault().Value;
-                AppConfig.WriteOut($">> session id for crawl set to {AppConfig.sessId}");
-                AppConfig.crawlStartUri = page.Url;
+                AppConfig.sessId = AppConfig.cks.Where(c => c.Name == AppConfig.sessIdName).FirstOrDefault()?.Value;
+                AppConfig.WriteOut($">> session id set to {AppConfig.sessId}");
                 return true;
             }
             catch(NavigationException ex)
