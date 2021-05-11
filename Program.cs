@@ -30,10 +30,14 @@ namespace Automation
                 }
                 chromeOpts = await Browser.StartPuppeteer();
                 await using var browser = await Puppeteer.LaunchAsync(chromeOpts);
-                if (!await Browser.LoginToTiqa(browser))
+                foreach (DeliciousFriend d in AppConfig.dfs)
                 {
-                    AppConfig.ErrHand(null, "XX couldn't log in");
-                    return 0;
+                    //var cntxt = await browser.CreateIncognitoBrowserContextAsync();
+                    d.brwsr = browser.DefaultContext;
+                    if(await d.Login())
+                    {
+                        await d.Do();
+                    }
                 }
                 //await Task.WhenAll(AppConfig.allTasks);
                 //AppConfig.WriteOut($">> null page responses: {AppConfig.NullResponse}\tpage response handler errors: {AppConfig.HandledErrs}");

@@ -11,17 +11,20 @@ namespace Automation
 {
     public static class AppConfig
     {
-        public static string tiqaUrl;
+        public static string url = "https://api.fallenlondon.com/api";
         public static readonly string EOL = Environment.NewLine;
         public static string sessId;
-        public static string unFld = "[name='']";
-        public static string pwFld = "[name='']";
-        public static string lgnBtn = "[name='']";
+        public static string unFld;
+        public static string pwFld;
+        public static string lgnBtn;
         public static string un;
         public static string pw;
+        public static List<DeliciousFriend> dfs = new List<DeliciousFriend>();
         public static string sessIdName = "ASP.NET_SessionId";
         public static List<CookieParam> cks = new List<CookieParam>();
         public static List<Task> allTasks = new List<Task>();
+        public static List<BrowserContext> contexts = new List<BrowserContext>();
+        public static string act;
         public static string crawlStartUri;
         public static int maxPara = 4;
         public static SemaphoreSlim semaphore;// = new SemaphoreSlim(maxPara);
@@ -40,15 +43,14 @@ namespace Automation
             $">> none so far{EOL}{EOL}" +
             $"INPUTS <<{EOL}" +
             $">> {"switch",-20}             {"required",-10}    {"default",-30}                     {"info",-10}{EOL}" +
-            $">> {"/u username",-20}        {"X",-10}           {"",-30}                            username for login to whatever{EOL}" +
-            $">> {"/uf usernameField",-20}  {"",-10}            {"[name='']",-30}                   input name for username data{EOL}" +
-            $">> {"/p password",-20}        {"X",-10}           {"",-30}                            password for login to whatever{EOL}" +
-            $">> {"/pf passwordField",-20}  {"",-10}            {"[name='']",-30}                   input name for password data{EOL}" +
-            $">> {"/lf loginField",-20}     {"",-10}            {"[name='']",-30}                   input name for submitting login data{EOL}" +
-            $">> {"/sid sessionIdName",-20} {"",-10}            {"ASP.NET_SessionId",-30}           name of session id cookie{EOL}" +
-            $">> {"/h targetLogin",-20}     {"X",-10}           {"",-30}                            url of login page for site{EOL}" +
+            $">> {"/u username",-20}        {"X",-10}           {"",-30}                            username for login to whatever, can be comma delimited for many{EOL}" +
+            $">> {"/uf usernameField",-20}  {"X",-10}            {"[name='']",-30}                   input name for username data{EOL}" +
+            $">> {"/p password",-20}        {"X",-10}           {"",-30}                            password for login to whatever, can be comma delimited for many{EOL}" +
+            $">> {"/pf passwordField",-20}  {"X",-10}            {"[name='']",-30}                   input name for password data{EOL}" +
+            $">> {"/lf loginField",-20}     {"X",-10}            {"[name='']",-30}                   input name for submitting login data. Blank /u and /pw will trigger google+ login{EOL}" +
+            $">> {"/a act",-20}             {"X",-10}           {"",-30}                            act for a delicious friend to take, can be comma delimited for many{EOL}" +
             $">> {"/s",-20}                 {"",-10}            { "",-30}                           only outputs exceptions and the wave error count{EOL}" +
-            $">> {"/t threads",-20}         {"",-10}            {"4",-30}                           max concurrent crawler/chrome requests{EOL}" +
+            //$">> {"/t threads",-20}         {"",-10}            {"4",-30}                           max concurrent crawler/chrome requests{EOL}" +
             $">> {"/ne",-20}                {"",-10}            {"",-30}                            no handled exception output{EOL}" +
             $">> {"/l",-20}                 {"",-10}            {"",-30}                            writes to logs, respects /ne and /s{EOL}" +
             $">> {"/o outLog",-20}          {"",-10}            {"./out.log",-30}                   file to write to{EOL}{EOL}" +
@@ -95,6 +97,9 @@ namespace Automation
         {
             var argList = new List<string>(args);
             bool res = true;
+            string[] uns = new string[0];
+            string[] pws = new string[0];
+            int[] acts = new int[0];
             int posOfSwitch = argList.IndexOf("/u");
             if (posOfSwitch == -1)
             {
@@ -108,6 +113,13 @@ namespace Automation
                 if (un.Length == 0 || un.StartsWith("/")){
                     Console.WriteLine("XX username arg present but needs a value");
                     return false;
+                }
+                foreach (string u in un.Split(","))
+                {
+                    var nuns = new string[uns.Length + 1];
+                    uns.CopyTo(nuns,0);
+                    nuns[nuns.Length - 1] = u.Trim();
+                    uns = nuns;
                 }
                 argList.RemoveAt(posOfSwitch);
             }
@@ -138,6 +150,13 @@ namespace Automation
                     Console.WriteLine("XX password arg present but needs a value");
                     return false;
                 }
+                foreach (string p in pw.Split(","))
+                {
+                    var npws = new string[pws.Length + 1];
+                    pws.CopyTo(npws, 0);
+                    npws[npws.Length - 1] = p.Trim();
+                    pws = npws;
+                }
                 argList.RemoveAt(posOfSwitch);
             }
             posOfSwitch = argList.IndexOf("/pf");
@@ -164,23 +183,6 @@ namespace Automation
                 }
                 argList.RemoveAt(posOfSwitch);
             }
-            posOfSwitch = argList.IndexOf("/h");
-            if (posOfSwitch == -1)
-            {
-                Console.WriteLine("XX need a target login url");
-                res = false;
-            }
-            else
-            {
-                argList.RemoveAt(posOfSwitch);
-                tiqaUrl = argList[posOfSwitch];
-                if(tiqaUrl.Length == 0 || tiqaUrl.StartsWith("/"))
-                {
-                    Console.WriteLine("XX target login url arg present but needs a value");
-                    return false;
-                }
-                argList.RemoveAt(posOfSwitch);
-            }
             posOfSwitch = argList.IndexOf("/t");
             if (posOfSwitch != -1)
             {
@@ -190,6 +192,25 @@ namespace Automation
                 {
                     Console.WriteLine("XX threads arg present but is 0 or cannot parse int");
                     return false;
+                }
+                argList.RemoveAt(posOfSwitch);
+            }
+            posOfSwitch = argList.IndexOf("/a");
+            if (posOfSwitch != -1)
+            {
+                argList.RemoveAt(posOfSwitch);
+                act = argList[posOfSwitch];
+                foreach (string a in act.Split(","))
+                {
+                    var nacts = new int[acts.Length + 1];
+                    var success = int.TryParse(a, out nacts[nacts.Length - 1]);
+                    acts.CopyTo(nacts, 0);
+                    acts = nacts;
+                    if(!success || acts[acts.Length - 1] < 0)
+                    {
+                        Console.WriteLine("XX acts arg present but is less than 0 cannot be parsed");
+                        return false;
+                    }
                 }
                 argList.RemoveAt(posOfSwitch);
             }
@@ -235,6 +256,18 @@ namespace Automation
                 argList.RemoveAt(posOfSwitch);
                 ol = File.CreateText(outLog);
                 log = true;
+            }
+            if (acts.Length != uns.Length && acts.Length != pw.Length)
+            {
+                Console.WriteLine("XX uns, pws, and acts must all be the same length");
+                return false;
+            }
+            else
+            {
+                for(var i = 0; i < acts.Length; i++)
+                {
+                    dfs.Add(new DeliciousFriend((ActsManager.acts)acts[i], uns[i], pws[i]));
+                }
             }
             return res;
         }

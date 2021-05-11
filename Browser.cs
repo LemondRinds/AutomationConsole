@@ -10,20 +10,15 @@ namespace Automation
     {
         public static async Task<LaunchOptions> StartPuppeteer()
         {
-            var cctPth = Path.Join(".\\WaveExtension", "3.1.3_0");
-            cctPth = Path.GetFullPath(cctPth);
             LaunchOptions chromeOpts = new LaunchOptions {
                 Headless = false,
                 Args = new string[]
                 {
-                    $"--load-extension={cctPth}",
-                    $"--disable-extensions-except={cctPth}",
                     "--disable-web-security",
                     "--disable-features=IsolateOrigins,site-per-process",
                     "--disable-features=IsolateOrigins",
                     "--disable-site-isolation-trials",
-                    "--disable-oor-cors",
-                    "--unsafely-treat-insecure-origin-as-secure=chrome-extension://jbbplnpkjmmeebjpijfedlgcdilocofh/sidebar.html"
+                    "--disable-oor-cors"
                 }
             };
             AppConfig.WriteOut(">> downloading chrome if not found");
@@ -37,23 +32,31 @@ namespace Automation
             //await using var browser = await Puppeteer.LaunchAsync(chromeOpts);
             return chromeOpts;
         }
-        public static async Task<bool> LoginToTiqa(PuppeteerSharp.Browser browser) {
+        public static async Task<bool> Login(BrowserContext browser, string u, string p) {
             try
             {
-                var pages = await browser.PagesAsync();
-                var page = pages[0];
-                await page.GoToAsync(AppConfig.tiqaUrl);
-                var un = await page.WaitForSelectorAsync(AppConfig.unFld);
-                var pw = await page.WaitForSelectorAsync(AppConfig.pwFld);
-                var lgn = await page.WaitForSelectorAsync(AppConfig.lgnBtn);
-                await un.TypeAsync(AppConfig.un);
-                await pw.TypeAsync(AppConfig.pw);
+                var page = await browser.NewPageAsync();
+                await page.GoToAsync("http://fallenlondon.com/login");
+                ElementHandle lgn;
+                if (!string.IsNullOrEmpty(u))
+                {
+                    var un = await page.WaitForSelectorAsync(AppConfig.unFld);
+                    var pw = await page.WaitForSelectorAsync(AppConfig.pwFld);
+                    lgn = await page.WaitForSelectorAsync(AppConfig.lgnBtn);
+                    await un.TypeAsync(u);
+                    await pw.TypeAsync(p);
+                }
+                else
+                {
+                    lgn = await page.WaitForSelectorAsync(".button.button--google");
+                }
                 await lgn.ClickAsync();
                 await page.WaitForNavigationAsync();
-                var cks = await page.GetCookiesAsync();
-                AppConfig.cks = cks.ToList();//.Where(c => c.Domain == new Uri(page.Url).Host).ToList();
-                AppConfig.sessId = AppConfig.cks.Where(c => c.Name == AppConfig.sessIdName).FirstOrDefault()?.Value;
-                AppConfig.WriteOut($">> session id set to {AppConfig.sessId}");
+                //var cks = await page.GetCookiesAsync();
+                //AppConfig.cks = cks.ToList();//.Where(c => c.Domain == new Uri(page.Url).Host).ToList();
+                //AppConfig.sessId = AppConfig.cks.Where(c => c.Name == AppConfig.sessIdName).FirstOrDefault()?.Value;
+                //AppConfig.WriteOut($">> session id set to {AppConfig.sessId}");
+                AppConfig.sessId = await page.EvaluateFunctionAsync<string>("() => window.sessionStorage.access_token");
                 return true;
             }
             catch(NavigationException ex)
