@@ -11,7 +11,7 @@ namespace Automation
         public static string hGet(string pth, string success, string fail)
         {
             return "var xmlHttp = new XMLHttpRequest();" +
-                $"xmlHttp.open('GET', '{AppConfig.url}{pth}', false);" +
+                $"xmlHttp.open('GET', 'https://api.{AppConfig.url}{pth}/api', false);" +
                 $"xmlHttp.setRequestHeader('Authorization', 'Bearer {AppConfig.sessId}');" +
                 "xmlHttp.send(null);" +
                 "if(xmlHttp.status == 200){" +
@@ -27,7 +27,7 @@ namespace Automation
         public static string hPost(string pth, string success, string fail, string body = null)
         {
             return "var xmlHttp = new XMLHttpRequest();" +
-                $"xmlHttp.open('POST', '{AppConfig.url}{pth}', false);" +
+                $"xmlHttp.open('POST', 'https://api.{AppConfig.url}{pth}/api', false);" +
                 $"xmlHttp.setRequestHeader('Authorization', 'Bearer {AppConfig.sessId}');" +
                 "xmlHttp.setRequestHeader('content-type','application/json');" +
                 $"xmlHttp.send({(string.IsNullOrEmpty(body) ? "null" : "JSON.stringify(" + body + ")")});" +

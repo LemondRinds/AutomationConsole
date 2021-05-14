@@ -32,11 +32,11 @@ namespace Automation
             //await using var browser = await Puppeteer.LaunchAsync(chromeOpts);
             return chromeOpts;
         }
-        public static async Task<bool> Login(BrowserContext browser, string u, string p) {
+        public static async Task<bool> Login(Page page, string u, string p){//BrowserContext browser, string u, string p) {
             try
             {
-                var page = await browser.NewPageAsync();
-                await page.GoToAsync("http://fallenlondon.com/login");
+                //var page = await browser.NewPageAsync();
+                await page.GoToAsync($"http://{AppConfig.url}/login");
                 ElementHandle lgn;
                 if (!string.IsNullOrEmpty(u))
                 {
@@ -61,7 +61,7 @@ namespace Automation
             }
             catch(NavigationException ex)
             {
-                AppConfig.ErrHand(ex, $"XX failed to navigate to url");
+                AppConfig.ErrHand(ex, $"XX failed to navigate to apiurl");
                 return false;
             }
             catch (Exception ex)

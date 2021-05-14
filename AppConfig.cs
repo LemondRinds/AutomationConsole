@@ -11,7 +11,7 @@ namespace Automation
 {
     public static class AppConfig
     {
-        public static string url = "https://api.fallenlondon.com/api";
+        public static string url = "";
         public static readonly string EOL = Environment.NewLine;
         public static string sessId;
         public static string unFld;
@@ -50,6 +50,7 @@ namespace Automation
             $">> {"/lf loginField",-20}     {"X",-10}            {"[name='']",-30}                   input name for submitting login data. Blank /u and /pw will trigger google+ login{EOL}" +
             $">> {"/a act",-20}             {"X",-10}           {"",-30}                            act for a delicious friend to take, can be comma delimited for many{EOL}" +
             $">> {"/s",-20}                 {"",-10}            { "",-30}                           only outputs exceptions and the wave error count{EOL}" +
+            $">> {"/h",-20}                 {"X",-10}           { "",-30}                           target host{EOL}" +
             //$">> {"/t threads",-20}         {"",-10}            {"4",-30}                           max concurrent crawler/chrome requests{EOL}" +
             $">> {"/ne",-20}                {"",-10}            {"",-30}                            no handled exception output{EOL}" +
             $">> {"/l",-20}                 {"",-10}            {"",-30}                            writes to logs, respects /ne and /s{EOL}" +
@@ -179,6 +180,22 @@ namespace Automation
                 if (lgnBtn.Length == 0 || lgnBtn.StartsWith("/"))
                 {
                     Console.WriteLine("XX login field arg present but needs a value");
+                    return false;
+                }
+                argList.RemoveAt(posOfSwitch);
+            }
+            posOfSwitch = argList.IndexOf("/h");
+            if (posOfSwitch == -1)
+            {
+                Console.WriteLine("XX need a targe host");
+                res = false;
+            }
+            else {
+                argList.RemoveAt(posOfSwitch);
+                url = argList[posOfSwitch];
+                if (url.Length == 0 || url.StartsWith("/"))
+                {
+                    Console.WriteLine("XX target host arg present but needs a value");
                     return false;
                 }
                 argList.RemoveAt(posOfSwitch);

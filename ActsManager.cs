@@ -4,36 +4,44 @@ using PuppeteerSharp;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Automation
 {
-    public static class ActsManager
+    public class ActsManager
     {
+        public Page Page;
+        public ActsManager(Page pg)
+        {
+            Page = pg;
+        }
         public enum acts
         {
             BrawlAtMH,
             OppInSpite,
             PeramPathVG
         }
-        public static async Task<bool> Do(acts a, Page p)
+        public async Task<bool> Do(acts a)
         {
-            var c = await new Candle(p).Get();
-            if (c.points < 1)
+            var c = new Candle(Page);
+            var pnt = await c.Get();
+            if (pnt.points < 1)
                 return false;
-            var trm = new TravelManager(p);
+            var trm = new TravelManager(Page);
             switch (a)
             {
                 case acts.BrawlAtMH:
-                    await trm.Post(TravelManager.routes.MedusasHead);
-                    var b = new BrawlAtMH(p);
-                    var cp = c.points;
+                    await BackOrOn();
+                    await trm.GoTo(TravelManager.routes.MedusasHead);
+                    //await Page.ReloadAsync();
+                    var b = new BrawlAtMH(Page, this);
                     var g = true;
-                    while (cp > 0 && g)
+                    while (pnt.points > 0 && g)
                     {
-                        (g, cp) = await b.Post();
+                        (g, _) = await b.Post();
+                        pnt = await c.Get();
                     }
-                    await b.Post();
                     //await BrawlAtMH.Perform(p);
                     break;
                 case acts.OppInSpite:
@@ -47,6 +55,30 @@ namespace Automation
             }
             return true;
             return false;
+        }
+        public async Task<bool> BackOrOn()
+        {
+            var tries = 0;
+            // go back until we hit the travel button and click it
+            while (tries < 100)
+            {
+                tries++;
+                Thread.Sleep(250);
+                var ow = await Page.XPathAsync("//button[contains(text(), 'Onwards')]");
+                if (ow.Length > 0 && ow?[0] != null)
+                {
+                    await ow[0].ClickAsync();
+                    continue;
+                }
+                var pn = await Page.XPathAsync("//span[contains(., ' Perhaps not')]");
+                if (pn.Length > 0 && pn?[0] != null)
+                {
+                    await pn[0].ClickAsync();
+                    continue;
+                }
+                break;
+            }
+            return true;
         }
     }
 }

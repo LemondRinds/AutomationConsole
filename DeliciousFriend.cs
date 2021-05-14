@@ -21,14 +21,17 @@ namespace Automation
         }
         public async Task<bool> Login()
         {
-            await Browser.Login(brwsr, un, pw);
+            var pages = await brwsr.Browser.DefaultContext.PagesAsync();
+            var page = pages[0];
+            await Browser.Login(page, un, pw);//brwsr, un, pw);
             return true;
         }
         public async Task<bool> Do()
         {
             var pages = await brwsr.PagesAsync();
             var p = pages[0];
-            await ActsManager.Do(act, p);
+            var am = new ActsManager(p);
+            await am.Do(act);
             return true;
         }
     }
