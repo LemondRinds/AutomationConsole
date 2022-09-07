@@ -13,7 +13,7 @@ namespace Automation
         }
 
         // could add di and semaphores and threading and async to all this but not specified in reqs
-        private static class DoStuff
+        private static class Thread
         {
             public static int Stuff(string[] args)
             {
@@ -34,7 +34,7 @@ namespace Automation
                         return 0;
                     }
 
-
+                    CheckFileExistsOrCreate()
 
                     if (AppConfig.DEBUG)
                         AppConfig.WriteOut(">> press enter to exit", true);
@@ -51,6 +51,21 @@ namespace Automation
                 }
                 finally
                 {
+                }
+            }
+            private void CheckFileExistsOrCreate(string path, bool mk = false){
+                if (!File.Exists(path))
+                {
+                if(mk){
+                    File.Create(path);
+                }
+                }
+                else
+                {
+                    using(var sw = new StreamWriter(path, true))
+                    {
+                        sw.WriteLine("The next line!");
+                    }
                 }
             }
         }
