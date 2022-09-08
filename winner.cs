@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Linq;
 
-namespace Winner
+namespace App
 {
     public class Winner
     {
